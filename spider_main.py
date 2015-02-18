@@ -8,7 +8,7 @@ class NJU_GPA_Spider:
         "choose server and define global variables"
         self.servers = {'1': "http://jwas2.nju.edu.cn:8080/jiaowu", '2': "http://jwas3.nju.edu.cn:8080/jiaowu/",
                    '3': "http://desktop.nju.edu.cn:8080/jiaowu/"}
-        self.server_index = raw_input("choose server 1/ 2/ 3 : ")
+        self.server_index = raw_input("Choose server [1, 2, 3]: ")
         self.cookies = {}
         self.termlist = {}
         self.creditstat = []
@@ -20,7 +20,15 @@ class NJU_GPA_Spider:
         "get cookie"
         while True:
             flag = True
-            if self.server_index == '1' or self.server_index == '2' or self.server_index == '3':
+            if self.server_index in self.servers.keys():
+                while True:
+                    try:
+                        r = requests.get(self.servers[self.server_index])
+                        break
+                    except requests.exceptions.ConnectionError:
+                        del self.servers[self.server_index]
+                        print "Can not connect to server %s\n" % self.server_index
+                        self.server_index = raw_input("choose server %s:" % str(self.servers.keys()))
                 while flag:
                     stuid = raw_input ("Type in your NJU student ID: ")
                     pwd = getpass.getpass ("Type in the password: ")
@@ -32,7 +40,7 @@ class NJU_GPA_Spider:
                 break
             else:
                 print "Please enter number 1, 2 or 3 !"
-                self.server_index = raw_input("choose server 1/ 2/ 3 : ")            
+                self.server_index = raw_input("Choose server 1/ 2/ 3 : ")            
         
     def showTermList(self):
         "list all courses and calculate gpa"
