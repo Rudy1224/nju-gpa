@@ -1,13 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
+import getpass
 
 class NJU_GPA_Spider:
 
     def __init__(self):
         "choose server and define global variables"
-        self.servers = ["http://jwas2.nju.edu.cn:8080/jiaowu", "http://jwas3.nju.edu.cn:8080/jiaowu/",
-                   "http://desktop.nju.edu.cn:8080/jiaowu/"]
-        self.server_index = int(raw_input("choose server [1/ 2/ 3]: ") )
+        self.servers = {'1': "http://jwas2.nju.edu.cn:8080/jiaowu", '2': "http://jwas3.nju.edu.cn:8080/jiaowu/",
+                   '3': "http://desktop.nju.edu.cn:8080/jiaowu/"}
+        self.server_index = raw_input("choose server 1/ 2/ 3 : ")
         self.cookies = {}
         self.termlist = {}
         self.creditstat = []
@@ -17,18 +18,28 @@ class NJU_GPA_Spider:
         
     def login(self):
         "get cookie"
-        stuid = raw_input ("Type in your NJU student ID: ")
-        pwd = raw_input ("Type in the password: ")
-        auth = {'userName': stuid, 'password': pwd}
-        r = requests.get(self.servers[self.server_index-1]+"login.do", params = auth)
-        self.cookies['JSESSIONID'] = r.headers['set-cookie'][11: 43]
+        while True:
+            flag = True
+            if self.server_index == '1' or self.server_index == '2' or self.server_index == '3':
+                while flag:
+                    stuid = raw_input ("Type in your NJU student ID: ")
+                    pwd = getpass.getpass ("Type in the password: ")
+                    auth = {'userName': stuid, 'password': pwd}
+                    r = requests.get(self.servers[self.server_index]+"login.do", params = auth)
+                    soup = BeautifulSoup(r.text)
+                    flag = soup.find(href="Javascript:window.history.go(-1)")
+                self.cookies['JSESSIONID'] = r.headers['set-cookie'][11: 43]
+                break
+            else:
+                print "Please enter number 1, 2 or 3 !"
+                self.server_index = raw_input("choose server 1/ 2/ 3 : ")            
         
     def showTermList(self):
         "list all courses and calculate gpa"
         termCodes = ['20121', '20122', '20131', '20132', '20141', '20142', '20151', '20152']
         temp = []
         for termcode in termCodes:
-            r = requests.get(self.servers[self.server_index-1]+
+            r = requests.get(self.servers[self.server_index]+
                              "student/studentinfo/achievementinfo.do?"+
                              "method=searchTermList&termCode="+termcode, cookies=self.cookies)
             soup = BeautifulSoup(r.text)
@@ -45,7 +56,7 @@ class NJU_GPA_Spider:
         
     def showCreditStat(self):
         "retrive credit earned"
-        r = requests.get(self.servers[self.server_index-1]+
+        r = requests.get(self.servers[self.server_index]+
                          "student/studentinfo/achievementinfo.do?method=searchCreditStat",
                          cookies=self.cookies)
         soup = BeautifulSoup(r.text)
@@ -81,8 +92,8 @@ mySpider = NJU_GPA_Spider()
 mySpider.login()
 while True:
     flag = raw_input('''\nChoose function:
-                     \n\t a. Show Term List\t b. Show Credit Status\n>''')
-    if flag == 'a':
+                     \n\t A. Show Term List\t B. Show Credit Status\n>''')
+    if flag == 'a' or flag == 'A':
         mySpider.showTermList()
         while True:
             newflag = raw_input("Continue to your credit status? Y/N ")
@@ -95,7 +106,7 @@ while True:
             else:
                 print "Please enter 'Y' or 'N' !"
         break
-    elif flag == 'b':
+    elif flag == 'b' or flag == 'B':
         mySpider.showCreditStat()
         while True:
             newflag = raw_input("Continue to your credit status? Y/N ")
@@ -110,3 +121,5 @@ while True:
         break
     else:
         print 'Please enter \'a\' or \'b\'!\n'
+
+raw_input("Press any key to exit...")
